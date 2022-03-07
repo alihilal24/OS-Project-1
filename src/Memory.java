@@ -18,32 +18,75 @@ two operations:
 */
 
 public class Memory {
-    Double[] mainMemory = new Double[2000];
+    final static Integer[] mainMemory = new Integer[2000];
 
     public static void main(String args[]) throws FileNotFoundException{
-        File INPUT_FILE = new File (inputFileName);
+        Scanner INPUT_CPU = new Scanner(System.in);
+        File INPUT_FILE = null;
+
+        if(INPUT_CPU.hasNextLine()){
+            try {
+                INPUT_FILE = new File(INPUT_CPU.nextLine());
+            } catch (Exception e) {
+                System.err.println("File can't be found, terminating program...");
+                System.exit(0);
+            }
+        }
+
         Scanner infile = new Scanner(INPUT_FILE);
         int counter = 0;
-        while(counter != 999 && infile.hasNextLine()){
-            String line = infile.nextLine();
-            // if(line == ""){    //this line is to check for extra gaps, does work thou
-            //     counter++;
-            //     continue;
-            // }
-            String arrline[] = line.split(" ", 2);
-            mainMemory[counter] = Double.parseDouble(arrline[0]);
+
+        while(infile.hasNextLine()){
+            if(infile.hasNextInt()){
+                mainMemory[counter++] = infile.nextInt();
+            }
+            else{
+                String line = infile.next();
+                String arrline[] = line.split(" ", 2);
+                if(arrline[0].charAt(0) == '.'){
+                    counter = Integer.parseInt(line.substring(1));
+                }
+                else if(line == ""){
+                    infile.nextLine();
+                }
+                else{
+                    mainMemory[counter++] = Integer.parseInt(arrline[0]);
+                }
+            }            
             System.out.println(mainMemory[counter]);
-            counter++;
         }
         infile.close();
+        INPUT_CPU.close();
+
+        do{
+
+            if(INPUT_CPU.hasNext()){
+                String line = INPUT_CPU.nextLine();
+                if(!line.isEmpty()){
+                    String arrline[] = line.split(",");
+                    if(arrline[0] == "read"){
+                        System.out.println(mainMemory[Integer.parseInt(arrline[1])]);
+                    }
+                    else if(arrline[0] == "write"){
+                        mainMemory[Integer.parseInt(arrline[1])] = Integer.parseInt(arrline[2]);
+                    }
+                    else{
+                        System.err.println("Internal System Error: Command other than read or write passed\nTerminating Program...");
+                        System.exit(0);
+                    }
+                    
+                }
+                else{
+                    break;
+                }
+            }
+            else{
+                break;
+            }
+
+        } while(true);
     }
 
-    void read(int address){
-
-    }
-
-    void write(int address, char data){
-
-    }
     
 }
+
