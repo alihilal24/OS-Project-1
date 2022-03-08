@@ -23,10 +23,11 @@ public class Memory {
     public static void main(String args[]) throws FileNotFoundException{
         Scanner INPUT_CPU = new Scanner(System.in);
         File INPUT_FILE = null;
-
+        // System.out.println("COMMUNICATION ESTABLISHED"); //debugging
         if(INPUT_CPU.hasNextLine()){
             try {
-                INPUT_FILE = new File(INPUT_CPU.nextLine());
+                // INPUT_FILE = new File(INPUT_CPU.nextLine());
+                INPUT_FILE = new File("s.txt"); //debugging
             } catch (Exception e) {
                 System.err.println("File can't be found, terminating program...");
                 System.exit(0);
@@ -35,10 +36,13 @@ public class Memory {
 
         Scanner infile = new Scanner(INPUT_FILE);
         int counter = 0;
+        // int lineNumber = 0; //debugging
 
         while(infile.hasNextLine()){
             if(infile.hasNextInt()){
                 mainMemory[counter++] = infile.nextInt();
+                if(infile.hasNextLine())
+                    infile.nextLine();
             }
             else{
                 String line = infile.next();
@@ -46,14 +50,16 @@ public class Memory {
                 if(arrline[0].charAt(0) == '.'){
                     counter = Integer.parseInt(line.substring(1));
                 }
-                else if(line == ""){
+                else if(line == "" || arrline[0] == "//"){
                     infile.nextLine();
                 }
                 else{
                     mainMemory[counter++] = Integer.parseInt(arrline[0]);
                 }
             }            
-            System.out.println(mainMemory[counter]);
+            // System.out.println(mainMemory[--counter]); //debugging
+          
+            // lineNumber++; //debugging
         }
         infile.close();
         INPUT_CPU.close();

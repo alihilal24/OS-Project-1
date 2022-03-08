@@ -28,6 +28,8 @@ import java.io.PrintWriter;
 import java.util.Random;
 import java.util.Scanner;
 
+import javax.management.loading.PrivateClassLoader;
+
 
 public class CPU {
     final static int SYSTEM_STACK_TOP = 2000, USER_STACK_TOP = 1000;
@@ -40,10 +42,10 @@ public class CPU {
     //         System.exit(0);
     //     }
         try {
-//            filename = args[0];
-            filename = "s1.txt"; //debugging purposes
-            // timer = Integer.parseInt(args[1]);
-            timer = 30; //debugging purposes
+           filename = args[0];
+            // filename = "s1p0.txt"; //debugging purposes
+            timer = Integer.parseInt(args[1]);
+            // timer = 30; //debugging purposes
         } catch (Exception e) {
             System.err.println("Invalid timer or file name value, terminating program....");
             System.exit(0);
@@ -97,11 +99,29 @@ public class CPU {
     }
 
     private static void writeToMem(PrintWriter pw, InputStream instr, OutputStream oustr, int address, int data){
-
+        pw.printf("write," + address + "," + data + "\n");
+        pw.flush();
     }
 
     private static void interupt(PrintWriter pw, Scanner memIn, InputStream instr, OutputStream oustr){
+        int operand = SP;
+        userMode = false;
+        SP = SYSTEM_STACK_TOP;
+        pushToStack(pw, instr, oustr, operand);
+        operand = PC;
+        PC = 1000;
+        pushToStack(pw, instr, oustr, operand);
+    }
 
+    private static void pushToStack(PrintWriter pw, InputStream instr, OutputStream oustr, int data){
+        SP--;
+        writeToMem(pw, instr, oustr, SP, data);
+    }
+    private static int popFromStack(PrintWriter pw, InputStream instr, OutputStream oustr, Scanner memIn){
+        int temp =  readFromMem(pw, instr, oustr, memIn, SP);
+        writeToMem(pw, instr, oustr, SP, 0);
+        SP++;
+        return temp;
     }
     private static void processInteruptCheck(){
         if(procInterupt == false)
@@ -235,21 +255,28 @@ public class CPU {
                 break;
             case 20: //Jump to the address
                 PC++;
-                
+                PC = readFromMem(pw, instr, oustr, memIn, PC);
                 processInteruptCheck();
                 PC++;
                 break;
             case 21: //Jump to the address only if the value in the AC is zero
                 PC++;
-                
+                if(AC == 0){
+                    PC = readFromMem(pw, instr, oustr, memIn, PC);
+                    processInteruptCheck();
+                    break;
+                }
                 processInteruptCheck();
                 PC++;
                 break;
             case 22: //Jump to the address only if the value in the AC is not zero
                 PC++;
-                
+                if(AC != 0){
+                    PC = readFromMem(pw, instr, oustr, memIn, PC);
+                    processInteruptCheck();
+                    break;
+                }
                 processInteruptCheck();
-                PC++;
                 break;
             case 23: //Push return address onto stack, jump to the address
                 PC++;
@@ -264,14 +291,12 @@ public class CPU {
                 PC++;
                 break;
             case 25: //Increment the value in X
-                PC++;
-                
+                X++;                
                 processInteruptCheck();
                 PC++;
                 break;
             case 26: //Decrement the value in X
-                PC++;
-                
+                X--;
                 processInteruptCheck();
                 PC++;
                 break;
