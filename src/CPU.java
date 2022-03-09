@@ -28,19 +28,18 @@ import java.io.PrintWriter;
 import java.util.Random;
 import java.util.Scanner;
 
-import javax.management.loading.PrivateClassLoader;
-
 
 public class CPU {
-    final static int SYSTEM_STACK_TOP = 2000, USER_STACK_TOP = 1000;
+    final static int SYSTEM_STACK_TOP = 2000;
+    static int USER_STACK_TOP = 1000;
     static int PC = 0, SP = 1000, IR, AC, X, Y, timer = 0, instructionCounter = 0;
     static boolean userMode = true, procInterupt = false;;
     static String filename = "";
     public static void main(String args[]){
-    //     if(args.length != 2){
-    //         System.err.println("Invalid length of arguments, termiating program....");
-    //         System.exit(0);
-    //     }
+        if(args.length != 2){
+            System.err.println("Invalid length of arguments, termiating program....");
+            System.exit(0);
+        }
         try {
            filename = args[0];
             // filename = "s1p0.txt"; //debugging purposes
@@ -50,7 +49,7 @@ public class CPU {
             System.err.println("Invalid timer or file name value, terminating program....");
             System.exit(0);
         }
-            System.out.println("Timer is: " + timer);
+            // System.out.println("Timer is: " + timer); //debugging
 
             try {
 
@@ -65,15 +64,17 @@ public class CPU {
                 pw.flush();
 
                 do{
-                    if(instructionCounter != 0 && (instructionCounter % timer) == 0 && procInterupt == false){
+                    if(instructionCounter != 0 && (instructionCounter % timer) == 0 && !procInterupt){
                         procInterupt = true;
                         interupt(pw, memIn, instr, oustr);
                     }
                     IR = readFromMem(pw, instr, oustr, memIn, PC);
+                    // System.out.println(IR); //debugging
                     if(IR == -1){
                         break;
                     }
                     executeInstruction(pw, memIn, instr, oustr);
+                    // System.out.print(IR); //debugging
                 } while(true);
                 pr.waitFor();
                 System.out.println("Process ended with value " + pr.exitValue());
@@ -83,16 +84,17 @@ public class CPU {
 
     }
 
-    private static int readFromMem(PrintWriter pw, InputStream instr, OutputStream oustr, Scanner memIn, int PC){
-        if(userMode && PC > 1000){
+    private static int readFromMem(PrintWriter pw, InputStream instr, OutputStream oustr, Scanner memIn, int value){
+        if(userMode && value > 1000){
             System.err.println("User program attempted to access system stack, Process terminating...");
             System.exit(0);
         }
-        pw.printf("read," + PC + "\n");
+        pw.printf("read," + value + "\n");
         pw.flush();
         if(memIn.hasNext()){
-            if(!(memIn.next().isEmpty())){
-                return Integer.parseInt(memIn.next());
+            String temp = memIn.next();
+            if(!temp.isEmpty() && !(temp.equals("null"))){
+                return Integer.parseInt(temp);
             }
         }
         return -1;
@@ -167,7 +169,6 @@ public class CPU {
                 PC++;
                 break;
             case 6: //Load from (Sp+X) into the AC (if SP is 990, and X is 1, load from 991).
-                PC++;
                 AC = readFromMem(pw, instr, oustr, memIn, SP + X);
                 processInteruptCheck();
                 PC++;
@@ -180,7 +181,6 @@ public class CPU {
                 PC++;
                 break;
             case 8: //Gets a random int from 1 to 100 into the AC
-                PC++;
                 Random rand = new Random();
                 AC = rand.nextInt(100) + 1;
                 processInteruptCheck();
@@ -190,10 +190,10 @@ public class CPU {
                 PC++;
                 operand = readFromMem(pw, instr, oustr, memIn, PC);
                 if(operand == 1){
-                    System.out.println(AC);
+                    System.out.print(AC);
                 }
                 else if(operand == 2){
-                    System.out.println((char)AC);
+                    System.out.print((char)AC);
                 }
                 else{
                     System.err.println("Port number " + operand + " is unrecognised by the program\nTerminating program...");
@@ -248,7 +248,6 @@ public class CPU {
                 PC++;
                 break;
             case 19: //Copy the value in SP to the AC 
-                PC++;
                 AC = SP;
                 processInteruptCheck();
                 PC++;
@@ -257,7 +256,6 @@ public class CPU {
                 PC++;
                 PC = readFromMem(pw, instr, oustr, memIn, PC);
                 processInteruptCheck();
-                PC++;
                 break;
             case 21: //Jump to the address only if the value in the AC is zero
                 PC++;
@@ -277,18 +275,19 @@ public class CPU {
                     break;
                 }
                 processInteruptCheck();
+                PC++;
                 break;
             case 23: //Push return address onto stack, jump to the address
                 PC++;
-                
+                operand = readFromMem(pw, instr, oustr, memIn, PC);
+                pushToStack(pw, instr, oustr, PC+1);
+                USER_STACK_TOP = SP;
+                PC = operand;
                 processInteruptCheck();
-                PC++;
                 break;
             case 24: //Pop return address from the stack, jump to the address
-                PC++;
-                
+                PC = popFromStack(pw, instr, oustr, memIn);
                 processInteruptCheck();
-                PC++;
                 break;
             case 25: //Increment the value in X
                 X++;                
@@ -301,34 +300,37 @@ public class CPU {
                 PC++;
                 break;
             case 27: //Push AC onto stack
-                PC++;
-                
+                pushToStack(pw, instr, oustr, AC);
                 processInteruptCheck();
                 PC++;
                 break;
             case 28: //Pop from stack into AC
-                PC++;
-                
+                AC = popFromStack(pw, instr, oustr, memIn);
                 processInteruptCheck();
                 PC++;
                 break;
             case 29: //Perform system call
-                PC++;
-                
+                procInterupt = true;
+                userMode = false;
+                operand = SP;
+                SP = 2000;
+                pushToStack(pw, instr, oustr, operand);
+                operand = PC + 1;
+                PC = 1500;
+                pushToStack(pw, instr, oustr, operand);
                 processInteruptCheck();
-                PC++;
                 break;
             case 30: //Return from system call
-                PC++;
-                
-                processInteruptCheck();
-                PC++;
+                PC = popFromStack(pw, instr, oustr, memIn);
+                SP = popFromStack(pw, instr, oustr, memIn);
+                userMode = true;
+                procInterupt = false;
+                instructionCounter++;
                 break;
             case 50: //End execution
-                PC++;
-                
                 processInteruptCheck();
-                PC++;
+                System.out.println("Program Terminating with instruction 50...");
+                System.exit(0);
                 break;
         
             default:

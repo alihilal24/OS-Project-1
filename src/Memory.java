@@ -26,8 +26,8 @@ public class Memory {
         // System.out.println("COMMUNICATION ESTABLISHED"); //debugging
         if(INPUT_CPU.hasNextLine()){
             try {
-                // INPUT_FILE = new File(INPUT_CPU.nextLine());
-                INPUT_FILE = new File("s.txt"); //debugging
+                INPUT_FILE = new File(INPUT_CPU.nextLine());
+                // INPUT_FILE = new File("s1p0.txt"); //debugging
             } catch (Exception e) {
                 System.err.println("File can't be found, terminating program...");
                 System.exit(0);
@@ -37,43 +37,46 @@ public class Memory {
         Scanner infile = new Scanner(INPUT_FILE);
         int counter = 0;
         // int lineNumber = 0; //debugging
+        // System.out.println("COMMUNICATION ESTABLISHED"); //debugging
 
         while(infile.hasNextLine()){
             if(infile.hasNextInt()){
                 mainMemory[counter++] = infile.nextInt();
                 if(infile.hasNextLine())
                     infile.nextLine();
+                // System.out.println("COMMUNICATION ESTABLISHED"); //debugging
             }
             else{
                 String line = infile.next();
                 String arrline[] = line.split(" ", 2);
                 if(arrline[0].charAt(0) == '.'){
                     counter = Integer.parseInt(line.substring(1));
+                            // System.out.println("COMMUNICATION ESTABLISHED"); //debugging
+
                 }
-                else if(line == "" || arrline[0] == "//"){
+                else if(line.equals("") || arrline[0].equals("//")){
                     infile.nextLine();
                 }
                 else{
                     mainMemory[counter++] = Integer.parseInt(arrline[0]);
+                            // System.out.println("COMMUNICATION ESTABLISHED"); //debugging
                 }
             }            
             // System.out.println(mainMemory[--counter]); //debugging
           
             // lineNumber++; //debugging
         }
-        infile.close();
-        INPUT_CPU.close();
 
         do{
-
+            //  System.out.println("COMMUNICATION ESTABLISHED"); //debugging
             if(INPUT_CPU.hasNext()){
                 String line = INPUT_CPU.nextLine();
                 if(!line.isEmpty()){
                     String arrline[] = line.split(",");
-                    if(arrline[0] == "read"){
+                    if(arrline[0].equals("read")){
                         System.out.println(mainMemory[Integer.parseInt(arrline[1])]);
                     }
-                    else if(arrline[0] == "write"){
+                    else if(arrline[0].equals("write")){
                         mainMemory[Integer.parseInt(arrline[1])] = Integer.parseInt(arrline[2]);
                     }
                     else{
@@ -91,6 +94,8 @@ public class Memory {
             }
 
         } while(true);
+        infile.close();
+        INPUT_CPU.close();
     }
 
     
